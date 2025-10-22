@@ -1,6 +1,7 @@
 import reflex as rx
 from app.states.state import AppState
 from app.states.auth_state import AuthState
+from app.states.settings_state import SettingsState, FieldDefinition
 from app.components.sidebar import sidebar
 from app.components.header import header
 
@@ -123,6 +124,44 @@ def settings_page() -> rx.Component:
                             class_name="flex items-center justify-between mt-4",
                         ),
                         class_name="mt-6",
+                    ),
+                    class_name="bg-white p-8 rounded-2xl border border-gray-100 shadow-sm mt-6",
+                ),
+                rx.el.div(
+                    rx.el.h2(
+                        "Field Definitions",
+                        class_name="text-xl font-bold text-gray-800",
+                    ),
+                    rx.el.p(
+                        "Select which custom fields to display for people.",
+                        class_name="text-gray-500 mt-1",
+                    ),
+                    rx.cond(
+                        SettingsState.is_loading,
+                        rx.el.div(rx.spinner(), class_name="flex justify-center p-8"),
+                        rx.el.div(
+                            rx.foreach(
+                                SettingsState.field_definitions,
+                                lambda field: rx.el.label(
+                                    rx.el.input(
+                                        type="checkbox",
+                                        checked=SettingsState.selected_field_ids.contains(
+                                            field["id"]
+                                        ),
+                                        on_change=lambda: SettingsState.toggle_field_definition(
+                                            field["id"]
+                                        ),
+                                        class_name="h-4 w-4 rounded border-gray-300 text-teal-600 focus:ring-teal-500",
+                                    ),
+                                    rx.el.span(
+                                        field["name"],
+                                        class_name="ml-3 text-sm text-gray-700",
+                                    ),
+                                    class_name="flex items-center p-3 hover:bg-gray-50 rounded-lg cursor-pointer",
+                                ),
+                            ),
+                            class_name="mt-4 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-2 border rounded-lg p-2 max-h-96 overflow-y-auto",
+                        ),
                     ),
                     class_name="bg-white p-8 rounded-2xl border border-gray-100 shadow-sm mt-6",
                 ),

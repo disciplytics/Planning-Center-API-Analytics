@@ -8,6 +8,7 @@ from app.pages.login import login_page
 from app.pages.settings import settings_page
 from app.pages.people_page import people_page
 from app.states.people_state import PeopleState
+from app.states.settings_state import SettingsState
 
 
 def index() -> rx.Component:
@@ -53,6 +54,8 @@ app.add_page(
     people_page, route="/people", on_load=[AppState.on_load, PeopleState.on_load]
 )
 app.add_page(index, route="/teams", on_load=AppState.on_load)
-app.add_page(settings_page, route="/settings", on_load=AppState.on_load)
+app.add_page(
+    settings_page, route="/settings", on_load=[AppState.on_load, SettingsState.on_load]
+)
 app.add_page(login_page, route="/login")
 app.add_page(lambda: rx.fragment(), route="/callback", on_load=AuthState.on_load)

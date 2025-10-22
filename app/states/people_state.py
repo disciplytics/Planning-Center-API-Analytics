@@ -3,6 +3,7 @@ from typing import TypedDict
 import httpx
 import logging
 from app.states.auth_state import AuthState, API_BASE_URL
+from app.states.settings_state import SettingsState
 from collections import defaultdict
 
 
@@ -11,6 +12,7 @@ class Person(TypedDict):
     name: str
     status: str
     avatar: str
+    field_data: dict[str, str]
 
 
 class Team(TypedDict):
@@ -74,16 +76,21 @@ class PeopleState(rx.State):
                     json_response = response.json()
                     all_people_data.extend(json_response.get("data", []))
                     next_url = json_response.get("links", {}).get("next")
-            async with self:
-                self.all_people = [
+            temp_people = []
+            for item in all_people_data:
+                person_id = item["id"]
+                field_data = await self._fetch_field_data_for_person(client, person_id)
+                temp_people.append(
                     {
-                        "id": item["id"],
+                        "id": person_id,
                         "name": item["attributes"]["name"],
                         "status": item["attributes"]["status"],
                         "avatar": item["attributes"]["avatar"],
+                        "field_data": field_data,
                     }
-                    for item in all_people_data
-                ]
+                )
+            async with self:
+                self.all_people = temp_people
         except httpx.HTTPStatusError as e:
             logging.exception(f"Error fetching people: {e}")
         except Exception as e:
@@ -153,6 +160,39 @@ class PeopleState(rx.State):
             logging.exception(
                 f"An unexpected error occurred while fetching team positions: {e}"
             )
+
+    async def _fetch_field_data_for_person(
+        self, client: httpx.AsyncClient, person_id: str
+    ) -> dict[str, str]:
+        """Fetch and process field data for a single person based on selected definitions."""
+        settings = await self.get_state(SettingsState)
+        if not settings.selected_field_ids:
+            return {}
+        field_data_map = {}
+        try:
+            field_data_url = f"{API_BASE_URL}/people/v2/people/{person_id}/field_data?include=field_definition"
+            response = await client.get(field_data_url)
+            response.raise_for_status()
+            json_response = response.json()
+            included_defs = {
+                item["id"]: item["attributes"]["name"]
+                for item in json_response.get("included", [])
+                if item["type"] == "FieldDefinition"
+            }
+            for datum in json_response.get("data", []):
+                field_def_id = datum["relationships"]["field_definition"]["data"]["id"]
+                if field_def_id in settings.selected_field_ids:
+                    field_name = included_defs.get(field_def_id)
+                    if field_name:
+                        value = datum["attributes"].get("value", "N/A")
+                        field_data_map[field_name] = str(value)
+        except httpx.HTTPStatusError as e:
+            logging.exception(f"Error fetching field data for person {person_id}: {e}")
+        except Exception as e:
+            logging.exception(
+                f"Unexpected error fetching field data for person {person_id}: {e}"
+            )
+        return field_data_map
 
     @rx.var
     def total_volunteers(self) -> int:

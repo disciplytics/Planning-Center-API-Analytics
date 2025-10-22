@@ -26,8 +26,23 @@ Build a focused analytics application that integrates with the Planning Center P
 
 ---
 
-## Phase 3: Enhanced People Analytics
-**Goal**: Expand people analytics with more detailed insights now that services are removed.
+## Phase 3: Field Definitions and Field Data Integration ✅
+**Goal**: Allow users to select custom field definitions in settings and display corresponding field data for each person.
+
+- [x] Create SettingsState to fetch and manage field definitions
+- [x] Add field_definitions list to store all available custom fields
+- [x] Implement toggle_field_definition to allow users to select/deselect fields
+- [x] Store selected field definitions in LocalStorage for persistence
+- [x] Add Field Definitions section to settings page with checkboxes
+- [x] Update PeopleState to fetch field data for each person
+- [x] Filter field data based on user's selected field definitions
+- [x] Display field data on volunteer cards in people page
+- [x] Add loading states for field definitions fetching
+
+---
+
+## Phase 4: Enhanced People Analytics
+**Goal**: Expand people analytics with more detailed insights.
 
 - [ ] Add people growth charts showing new members over time
 - [ ] Create detailed volunteer status breakdown (active, inactive, pending)
@@ -41,5 +56,9 @@ Build a focused analytics application that integrates with the Planning Center P
 - ✅ Removed all services-related functionality per user request
 - ✅ Focus entirely on People and Teams analytics
 - ✅ Implemented proper API pagination to fetch ALL records, not just first 100
+- ✅ Added field definitions and field data integration
 - Planning Center API uses link-based pagination with 'next' URL in response
 - Using async loops to efficiently handle multiple page requests
+- Field definitions allow users to customize which custom fields are displayed
+- Field data is fetched per person and filtered by selected definitions
+- LocalStorage persists user's field definition selections across sessions

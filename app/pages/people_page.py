@@ -27,7 +27,21 @@ def volunteer_card(person: Person) -> rx.Component:
         rx.el.img(src=person["avatar"], class_name="h-16 w-16 rounded-full mx-auto"),
         rx.el.p(
             person["name"],
-            class_name="mt-2 text-sm font-semibold text-gray-800 text-center",
+            class_name="mt-2 text-sm font-semibold text-gray-800 text-center truncate",
+        ),
+        rx.el.div(
+            rx.foreach(
+                person["field_data"].keys(),
+                lambda field_name: rx.el.div(
+                    rx.el.p(field_name, class_name="text-xs text-gray-400"),
+                    rx.el.p(
+                        person["field_data"][field_name],
+                        class_name="text-xs font-medium text-gray-600 truncate",
+                    ),
+                    class_name="text-center mt-1",
+                ),
+            ),
+            class_name="mt-2 space-y-1",
         ),
         class_name="bg-white p-4 rounded-xl border border-gray-100 shadow-sm",
     )
