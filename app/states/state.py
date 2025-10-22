@@ -68,8 +68,6 @@ class AppState(rx.State):
     team_chart_data: list[ChartData] = []
     metric_trends: dict[str, MetricTrend] = {}
     insights: list[Insight] = []
-    metric_trends: dict[str, MetricTrend] = {}
-    insights: list[Insight] = []
 
     async def _get_authed_client(self) -> httpx.AsyncClient | None:
         from app.states.auth_state import AuthState
@@ -121,44 +119,6 @@ class AppState(rx.State):
         yield AppState.update_dashboard_metrics
         async with self:
             self.dashboard_loading = False
-
-    def _calculate_trends(self):
-        if not self.previous_metrics:
-            self.metric_trends = {
-                m["title"]: {"change": "", "direction": "neutral"} for m in self.metrics
-            }
-            return
-        trends = {}
-        prev_map = {
-            m["title"]: int(m["value"].replace(",", "")) for m in self.previous_metrics
-        }
-        for metric in self.metrics:
-            title = metric["title"]
-            current_value = int(metric["value"].replace(",", ""))
-            prev_value = prev_map.get(title, 0)
-            if prev_value > 0:
-                change = (current_value - prev_value) / prev_value * 100
-                direction = "up" if change > 0 else "down"
-                trends[title] = {
-                    "change": f"{abs(change):.1f}%",
-                    "direction": direction,
-                }
-            else:
-                trends[title] = {"change": "", "direction": "neutral"}
-        self.metric_trends = trends
-
-    def _generate_insights(self):
-        insights = []
-        for metric in self.metrics:
-            if metric["title"] == "New Members (30d)" and int(metric["value"]) > 0:
-                insights.append(
-                    {
-                        "text": f"{metric['value']} new people joined in the last 30 days.",
-                        "icon": "party-popper",
-                        "color": "text-green-600",
-                    }
-                )
-        self.insights = insights
 
     def _calculate_trends(self):
         if not self.previous_metrics:
@@ -252,5 +212,4 @@ class AppState(rx.State):
         except httpx.HTTPStatusError as e:
             logging.exception(f"Error fetching dashboard metrics: {e}")
             async with self:
-                self.dashboard_loading = False
                 self.dashboard_loading = False
