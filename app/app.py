@@ -49,6 +49,8 @@ app = rx.App(
         ),
     ],
 )
+from app.pages.callback_page import callback_page
+
 app.add_page(index, route="/", on_load=AppState.on_load)
 app.add_page(
     people_page, route="/people", on_load=[AppState.on_load, PeopleState.on_load]
@@ -58,4 +60,4 @@ app.add_page(
     settings_page, route="/settings", on_load=[AppState.on_load, SettingsState.on_load]
 )
 app.add_page(login_page, route="/login")
-app.add_page(lambda: rx.fragment(), route="/callback", on_load=AuthState.on_load)
+app.add_page(callback_page, route="/callback", on_load=AuthState.on_load)

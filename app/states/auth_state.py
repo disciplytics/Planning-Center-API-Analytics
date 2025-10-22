@@ -12,8 +12,9 @@ REDIRECT_URI = "http://localhost:3000/callback"
 class AuthState(rx.State):
     """Manages the authentication state of the application."""
 
-    access_token: str | None = None
+    access_token: str | None = rx.LocalStorage(name="pco_access_token")
     is_authenticated: bool = False
+    error_message: str = ""
 
     @rx.var
     def auth_url(self) -> str:
@@ -24,27 +25,35 @@ class AuthState(rx.State):
     @rx.event
     async def handle_oauth_callback(self, code: str):
         """Exchange the authorization code for an access token."""
+        self.error_message = ""
         client_id = os.getenv("PLANNING_CENTER_APP_ID", "")
         client_secret = os.getenv("PLANNING_CENTER_SECRET", "")
-        async with httpx.AsyncClient() as client:
-            response = await client.post(
-                TOKEN_URL,
-                data={
-                    "grant_type": "authorization_code",
-                    "code": code,
-                    "client_id": client_id,
-                    "client_secret": client_secret,
-                    "redirect_uri": REDIRECT_URI,
-                },
-            )
-        if response.status_code == 200:
+        try:
+            async with httpx.AsyncClient() as client:
+                response = await client.post(
+                    TOKEN_URL,
+                    data={
+                        "grant_type": "authorization_code",
+                        "code": code,
+                        "client_id": client_id,
+                        "client_secret": client_secret,
+                        "redirect_uri": REDIRECT_URI,
+                    },
+                )
+                response.raise_for_status()
             token_data = response.json()
             self.access_token = token_data["access_token"]
             self.is_authenticated = True
             return rx.redirect("/settings")
-        else:
-            print(f"Failed to get token: {response.text}")
-            return rx.redirect("/login")
+        except httpx.HTTPStatusError as e:
+            error_details = e.response.json()
+            self.error_message = (
+                f"API Error: {error_details.get('error_description', e.response.text)}"
+            )
+            logging.exception(f"OAuth Error: {self.error_message}")
+        except Exception as e:
+            self.error_message = f"An unexpected error occurred: {str(e)}"
+            logging.exception("OAuth callback failed unexpectedly.")
 
     @rx.event
     def logout(self):
@@ -56,6 +65,9 @@ class AuthState(rx.State):
     @rx.event
     def on_load(self):
         """Event handler called when a page loads. Checks for auth code."""
+        if self.access_token:
+            self.is_authenticated = True
+            return
         code = self.router.page.params.get("code")
-        if code:
+        if code and self.router.page.path == "/callback":
             return AuthState.handle_oauth_callback(code)
