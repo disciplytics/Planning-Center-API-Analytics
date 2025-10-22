@@ -47,7 +47,6 @@ class AppState(rx.State):
     previous_metrics: list[Metric] = []
     nav_items: list[NavItem] = [
         {"name": "Dashboard", "icon": "layout-dashboard", "route": "/"},
-        {"name": "Services", "icon": "calendar-days", "route": "/services"},
         {"name": "People", "icon": "users", "route": "/people"},
         {"name": "Teams", "icon": "shield", "route": "/teams"},
         {"name": "Settings", "icon": "settings", "route": "/settings"},
@@ -60,25 +59,12 @@ class AppState(rx.State):
             "color": "text-teal-500",
         },
         {
-            "title": "Upcoming Services",
-            "value": "0",
-            "icon": "calendar",
-            "color": "text-indigo-500",
-        },
-        {
-            "title": "Open Positions",
-            "value": "0",
-            "icon": "user-plus",
-            "color": "text-amber-500",
-        },
-        {
-            "title": "New Members",
+            "title": "New Members (30d)",
             "value": "0",
             "icon": "user-check",
             "color": "text-green-500",
         },
     ]
-    service_chart_data: list[ChartData] = []
     team_chart_data: list[ChartData] = []
     metric_trends: dict[str, MetricTrend] = {}
     insights: list[Insight] = []
@@ -164,15 +150,7 @@ class AppState(rx.State):
     def _generate_insights(self):
         insights = []
         for metric in self.metrics:
-            if metric["title"] == "Open Positions" and int(metric["value"]) > 0:
-                insights.append(
-                    {
-                        "text": f"{metric['value']} positions need filling across upcoming services.",
-                        "icon": "alert-circle",
-                        "color": "text-amber-600",
-                    }
-                )
-            if metric["title"] == "New Members" and int(metric["value"]) > 0:
+            if metric["title"] == "New Members (30d)" and int(metric["value"]) > 0:
                 insights.append(
                     {
                         "text": f"{metric['value']} new people joined in the last 30 days.",
@@ -210,15 +188,7 @@ class AppState(rx.State):
     def _generate_insights(self):
         insights = []
         for metric in self.metrics:
-            if metric["title"] == "Open Positions" and int(metric["value"]) > 0:
-                insights.append(
-                    {
-                        "text": f"{metric['value']} positions need filling across upcoming services.",
-                        "icon": "alert-circle",
-                        "color": "text-amber-600",
-                    }
-                )
-            if metric["title"] == "New Members" and int(metric["value"]) > 0:
+            if metric["title"] == "New Members (30d)" and int(metric["value"]) > 0:
                 insights.append(
                     {
                         "text": f"{metric['value']} new people joined in the last 30 days.",
@@ -249,18 +219,6 @@ class AppState(rx.State):
                 total_volunteers = (
                     people_res.json().get("meta", {}).get("total_count", 0)
                 )
-                plans_res = await client.get(
-                    f"{API_BASE_URL}/services/v2/plans?filter=future"
-                )
-                plans_res.raise_for_status()
-                plans_data = plans_res.json()["data"]
-                upcoming_services_count = len(plans_data)
-                open_positions = sum(
-                    (
-                        plan["attributes"].get("needed_positions_count", 0)
-                        for plan in plans_data
-                    )
-                )
                 thirty_days_ago = (
                     datetime.utcnow() - timedelta(days=30)
                 ).isoformat() + "Z"
@@ -281,19 +239,7 @@ class AppState(rx.State):
                         "color": "text-teal-500",
                     },
                     {
-                        "title": "Upcoming Services",
-                        "value": str(upcoming_services_count),
-                        "icon": "calendar",
-                        "color": "text-indigo-500",
-                    },
-                    {
-                        "title": "Open Positions",
-                        "value": str(open_positions),
-                        "icon": "user-plus",
-                        "color": "text-amber-500",
-                    },
-                    {
-                        "title": "New Members",
+                        "title": "New Members (30d)",
                         "value": str(new_members_count),
                         "icon": "user-check",
                         "color": "text-green-500",

@@ -1,18 +1,11 @@
 import reflex as rx
 from app.states.state import AppState
 from app.states.auth_state import AuthState
-from app.states.services_state import ServicesState
 from app.components.sidebar import sidebar
 from app.components.header import header
 from app.components.dashboard import dashboard
 from app.pages.login import login_page
 from app.pages.settings import settings_page
-from app.pages.services_page import services_page
-from app.pages.people_page import people_page
-from app.states.people_state import PeopleState
-from app.pages.login import login_page
-from app.pages.settings import settings_page
-from app.pages.services_page import services_page
 from app.pages.people_page import people_page
 from app.states.people_state import PeopleState
 
@@ -56,9 +49,6 @@ app = rx.App(
     ],
 )
 app.add_page(index, route="/", on_load=AppState.on_load)
-app.add_page(
-    services_page, route="/services", on_load=[AppState.on_load, ServicesState.on_load]
-)
 app.add_page(
     people_page, route="/people", on_load=[AppState.on_load, PeopleState.on_load]
 )

@@ -60,19 +60,20 @@ class PeopleState(rx.State):
 
     @rx.event(background=True)
     async def fetch_all_people(self):
-        """Fetch all active people from the Planning Center API."""
+        """Fetch all active people from the Planning Center API with pagination."""
         client = await self._get_authed_client()
         if client is None:
-            async with self:
-                return rx.redirect("/login")
             return
+        all_people_data = []
+        next_url = f"{API_BASE_URL}/people/v2/people?where[status]=active&per_page=100"
         try:
             async with client:
-                response = await client.get(
-                    f"{API_BASE_URL}/people/v2/people?where[status]=active&per_page=100"
-                )
-                response.raise_for_status()
-                data = response.json()["data"]
+                while next_url:
+                    response = await client.get(next_url)
+                    response.raise_for_status()
+                    json_response = response.json()
+                    all_people_data.extend(json_response.get("data", []))
+                    next_url = json_response.get("links", {}).get("next")
             async with self:
                 self.all_people = [
                     {
@@ -81,26 +82,31 @@ class PeopleState(rx.State):
                         "status": item["attributes"]["status"],
                         "avatar": item["attributes"]["avatar"],
                     }
-                    for item in data
+                    for item in all_people_data
                 ]
         except httpx.HTTPStatusError as e:
             logging.exception(f"Error fetching people: {e}")
+        except Exception as e:
+            logging.exception(
+                f"An unexpected error occurred while fetching people: {e}"
+            )
 
     @rx.event(background=True)
     async def fetch_all_teams(self):
-        """Fetch all teams from the Planning Center API."""
+        """Fetch all teams from the Planning Center API with pagination."""
         client = await self._get_authed_client()
         if client is None:
-            async with self:
-                return rx.redirect("/login")
             return
+        all_teams_data = []
+        next_url = f"{API_BASE_URL}/people/v2/teams?per_page=100"
         try:
             async with client:
-                response = await client.get(
-                    f"{API_BASE_URL}/people/v2/teams?per_page=100"
-                )
-                response.raise_for_status()
-                data = response.json()["data"]
+                while next_url:
+                    response = await client.get(next_url)
+                    response.raise_for_status()
+                    json_response = response.json()
+                    all_teams_data.extend(json_response.get("data", []))
+                    next_url = json_response.get("links", {}).get("next")
             async with self:
                 self.all_teams = [
                     {
@@ -108,26 +114,29 @@ class PeopleState(rx.State):
                         "name": item["attributes"]["name"],
                         "volunteer_count": 0,
                     }
-                    for item in data
+                    for item in all_teams_data
                 ]
         except httpx.HTTPStatusError as e:
             logging.exception(f"Error fetching teams: {e}")
+        except Exception as e:
+            logging.exception(f"An unexpected error occurred while fetching teams: {e}")
 
     @rx.event(background=True)
     async def fetch_team_positions(self):
-        """Fetch all team positions to link people to teams."""
+        """Fetch all team positions to link people to teams with pagination."""
         client = await self._get_authed_client()
         if client is None:
-            async with self:
-                return rx.redirect("/login")
             return
+        all_positions_data = []
+        next_url = f"{API_BASE_URL}/people/v2/team_positions?per_page=100"
         try:
             async with client:
-                response = await client.get(
-                    f"{API_BASE_URL}/people/v2/team_positions?per_page=100"
-                )
-                response.raise_for_status()
-                data = response.json()["data"]
+                while next_url:
+                    response = await client.get(next_url)
+                    response.raise_for_status()
+                    json_response = response.json()
+                    all_positions_data.extend(json_response.get("data", []))
+                    next_url = json_response.get("links", {}).get("next")
             async with self:
                 self.team_positions = [
                     {
@@ -135,11 +144,15 @@ class PeopleState(rx.State):
                         "team_id": item["relationships"]["team"]["data"]["id"],
                         "person_id": item["relationships"]["person"]["data"]["id"],
                     }
-                    for item in data
-                    if item["relationships"].get("person")
+                    for item in all_positions_data
+                    if item.get("relationships", {}).get("person")
                 ]
         except httpx.HTTPStatusError as e:
             logging.exception(f"Error fetching team positions: {e}")
+        except Exception as e:
+            logging.exception(
+                f"An unexpected error occurred while fetching team positions: {e}"
+            )
 
     @rx.var
     def total_volunteers(self) -> int:

@@ -130,9 +130,6 @@ def dashboard() -> rx.Component:
                     ),
                 ),
                 rx.el.div(
-                    chart_card(
-                        "Service Attendance", AppState.service_chart_data, "#14b8a6"
-                    ),
                     chart_card("Team Engagement", AppState.team_chart_data, "#6366f1"),
                     class_name="grid grid-cols-1 lg:grid-cols-2 gap-6 mt-8",
                 ),
