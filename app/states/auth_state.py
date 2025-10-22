@@ -20,7 +20,9 @@ class AuthState(rx.State):
     def auth_url(self) -> str:
         """The URL to redirect the user to for authentication."""
         client_id = os.getenv("PLANNING_CENTER_APP_ID", "")
-        return f"{AUTHORIZE_URL}?client_id={client_id}&redirect_uri={REDIRECT_URI}&response_type=code&scope=people%20services"
+        redirect_uri_encoded = "http%3A%2F%2Flocalhost%3A3000%2Fcallback"
+        scope_encoded = "people%20services"
+        return f"{AUTHORIZE_URL}?client_id={client_id}&redirect_uri={redirect_uri_encoded}&response_type=code&scope={scope_encoded}"
 
     @rx.event
     async def handle_oauth_callback(self, code: str):
